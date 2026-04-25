@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>5º BPRv — Gerador de QR Code · Viaturas</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2330;
+    --border: #30363d;
+    --accent: #3fb950;
+    --accent2: #58a6ff;
+    --danger: #f85149;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --mono: 'DM Mono', monospace;
+    --sans: 'Sora', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--surface);
+  }
+  .badge {
+    background: var(--accent);
+    color: #0d1117;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 4px;
+    letter-spacing: .05em;
+  }
+  header h1 { font-size: 16px; font-weight: 600; }
+  header p { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* LAYOUT */
+  .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+
+  /* TABS */
+  .tabs { display: flex; gap: 2px; margin-bottom: 28px; border-bottom: 1px solid var(--border); }
+  .tab {
+    padding: 10px 20px;
+    font-size: 13px;
+    font-family: var(--sans);
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all .15s;
+    font-weight: 400;
+  }
+  .tab.active { color: var(--accent2); border-bottom-color: var(--accent2); }
+  .tab:hover:not(.active) { color: var(--text); }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* SECTION TITLE */
+  .section-title {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--muted);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  /* FORM GRID */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1 / -1; }
+  label { font-size: 12px; color: var(--muted); font-family: var(--mono); }
+  input, select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 9px 12px;
+    outline: none;
+    transition: border-color .15s;
+  }
+  input:focus, select:focus { border-color: var(--accent2); }
+  select option { background: var(--surface2); }
+
+  /* BUTTONS */
+  .btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    border: none;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .btn-primary { background: var(--accent); color: #0d1117; }
+  .btn-primary:hover { background: #56d364; }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--accent2); color: var(--accent2); }
+  .btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); font-size: 12px; padding: 6px 12px; }
+  .btn-danger:hover { background: var(--danger); color: #fff; }
+  .btn-sm { padding: 6px 14px; font-size: 12px; }
+
+  .btn-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+  /* TABLE */
+  .table-wrap { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-top: 16px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    background: var(--surface2);
+    padding: 10px 14px;
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: .05em;
+    border-bottom: 1px solid var(--border);
+  }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--surface2); }
+  tbody td { padding: 10px 14px; font-family: var(--mono); font-size: 12px; vertical-align: middle; }
+  .pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-family: var(--mono);
+  }
+  .pill-moto { background: #2d1f00; color: #e3a008; border: 1px solid #7a5500; }
+  .pill-car  { background: #0d2030; color: var(--accent2); border: 1px solid #1a4060; }
+
+  /* QR GRID */
+  .qr-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+    margin-top: 20px;
+  }
+  .qr-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    transition: border-color .15s;
+  }
+  .qr-card:hover { border-color: var(--accent); }
+  .qr-canvas { background: #fff; border-radius: 6px; padding: 8px; }
+  .qr-label { font-family: var(--mono); font-size: 11px; color: var(--muted); text-align: center; line-height: 1.6; }
+  .qr-label strong { color: var(--text); font-size: 13px; display: block; }
+
+  /* FORMS PREVIEW */
+  .forms-section { display: flex; flex-direction: column; gap: 20px; }
+  .forms-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .forms-card-header {
+    background: var(--surface2);
+    padding: 14px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .forms-card-header h3 { font-size: 14px; font-weight: 600; }
+  .forms-card-body { padding: 20px; }
+  .field-list { display: flex; flex-direction: column; gap: 8px; }
+  .field-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: var(--bg);
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    font-size: 12px;
+    font-family: var(--mono);
+  }
+  .field-type {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--surface2);
+    color: var(--muted);
+    min-width: 70px;
+    text-align: center;
+  }
+
+  /* ALERT */
+  .alert {
+    background: #0d2030;
+    border: 1px solid var(--accent2);
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-size: 13px;
+    color: var(--accent2);
+    margin-bottom: 20px;
+    line-height: 1.6;
+  }
+  .alert strong { display: block; margin-bottom: 4px; font-size: 12px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .05em; }
+
+  /* URL BOX */
+  .url-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    word-break: break-all;
+    line-height: 1.6;
+    margin-top: 8px;
+  }
+
+  /* PRINT */
+  .print-sheet {
+    display: none;
+  }
+  @media print {
+    body { background: #fff; color: #000; }
+    header, .tabs, .btn-row, .alert { display: none !important; }
+    .panel { display: block !important; }
+    .print-sheet { display: grid !important; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 20px; }
+    .print-card {
+      border: 1px dashed #ccc;
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      page-break-inside: avoid;
+    }
+    .print-card .qr-canvas { padding: 4px; }
+    .print-card p { font-size: 10px; text-align: center; line-height: 1.5; font-family: monospace; }
+    .qr-grid, .table-wrap, .forms-section { display: none !important; }
+  }
+
+  .count-badge {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 2px 10px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .count-badge span { color: var(--accent); font-weight: 500; }
+
+  .empty-state {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .empty-state svg { margin-bottom: 12px; opacity: .3; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+      <span class="badge">5º BPRv</span>
+      <h1>Gerador de QR Code · CheckList de Viaturas</h1>
+    </div>
+    <p>Cadastre as viaturas, gere os QR Codes e visualize a estrutura do Google Forms</p>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('cadastro')">1 · Cadastro de viaturas</button>
+    <button class="tab" onclick="showTab('qrcodes')">2 · QR Codes</button>
+    <button class="tab" onclick="showTab('forms')">3 · Estrutura do Forms</button>
+  </div>
+
+  <!-- PANEL 1: CADASTRO -->
+  <div class="panel active" id="tab-cadastro">
+    <div class="alert">
+      <strong>Como funciona</strong>
+      Cadastre cada viatura abaixo. O sistema gera automaticamente a URL com os dados pré-preenchidos para o Google Forms. Cole o link do seu Forms quando estiver pronto — ou use a estrutura sugerida na aba 3.
+    </div>
+
+    <p class="section-title">Adicionar viatura</p>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Modelo</label>
+        <select id="f-modelo">
+          <option value="Commander">Commander</option>
+          <option value="Corolla">Corolla</option>
+          <option value="Corolla Cross">Corolla Cross</option>
+          <option value="HB20">HB20</option>
+          <option value="Trailblazer">Trailblazer</option>
+          <option value="Virtus">Virtus</option>
+          <option value="BMW F800GS">BMW F800GS</option>
+          <option value="Outros">Outros</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Placa</label>
+        <input id="f-placa" placeholder="ex: BLU-7020" maxlength="8" oninput="this.value=this.value.toUpperCase()">
+      </div>
+      <div class="form-group">
+        <label>Prefixo</label>
+        <input id="f-prefixo" placeholder="ex: R-05000" oninput="this.value=this.value.toUpperCase()">
+      </div>
+      <div class="form-group">
+        <label>Número da viatura</label>
+        <input id="f-numero" placeholder="ex: 001" type="number">
+      </div>
+      <div class="form-group">
+        <label>Setor / Equipe</label>
+        <input id="f-setor" placeholder="ex: ROCAM, PATROL, RADAR">
+      </div>
+      <div class="form-group">
+        <label>Link do Google Forms (base)</label>
+        <input id="f-forms-url" placeholder="https://forms.gle/..." style="grid-column:1/-1">
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="addViatura()">+ Adicionar viatura</button>
+      <button class="btn btn-secondary" onclick="addExemplos()">Carregar exemplos</button>
+      <span id="count-label" class="count-badge"><span id="vcount">0</span> viaturas cadastradas</span>
+    </div>
+
+    <div class="table-wrap" style="margin-top:24px">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Modelo</th>
+            <th>Placa</th>
+            <th>Prefixo</th>
+            <th>Nº</th>
+            <th>Setor</th>
+            <th>URL gerada</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="viatura-list">
+          <tr><td colspan="8"><div class="empty-state"><p>Nenhuma viatura cadastrada ainda.<br>Adicione acima ou carregue os exemplos.</p></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PANEL 2: QR CODES -->
+  <div class="panel" id="tab-qrcodes">
+    <div class="btn-row" style="margin-bottom:20px">
+      <button class="btn btn-primary" onclick="gerarQRs()">Gerar todos os QR Codes</button>
+      <button class="btn btn-secondary" onclick="window.print()">Imprimir folha de etiquetas</button>
+      <span id="qr-count-label" class="count-badge"><span id="qcount">0</span> QR Codes</span>
+    </div>
+    <div id="qr-grid" class="qr-grid">
+      <div class="empty-state" style="grid-column:1/-1">
+        <p>Cadastre as viaturas na aba 1 e clique em "Gerar todos os QR Codes".</p>
+      </div>
+    </div>
+    <!-- Print sheet -->
+    <div class="print-sheet" id="print-sheet"></div>
+  </div>
+
+  <!-- PANEL 3: FORMS -->
+  <div class="panel" id="tab-forms">
+    <div class="alert">
+      <strong>Instruções de configuração</strong>
+      Crie um novo Google Forms, adicione os campos abaixo em ordem. Nos campos de Placa, Prefixo, Modelo, Número e Setor: ative "Resposta padrão" e copie o nome do parâmetro. Ao gerar o QR Code, o link preencherá esses campos automaticamente.
+    </div>
+
+    <div class="forms-section">
+
+      <div class="forms-card">
+        <div class="forms-card-header">
+          <h3>Seção 1 · Identificação da viatura <span style="font-size:11px;color:var(--muted);font-weight:400">(preenchimento automático via QR Code)</span></h3>
+          <span class="pill pill-car">automático</span>
+        </div>
+        <div class="forms-card-body">
+          <div class="field-list">
+            <div class="field-item"><span class="field-type">lista</span> Modelo da viatura &nbsp;·&nbsp; <span style="color:var(--accent);font-size:11px">param: modelo</span></div>
+            <div class="field-item"><span class="field-type">texto curto</span> Placa &nbsp;·&nbsp; <span style="color:var(--accent);font-size:11px">param: placa</span></div>
+            <div class="field-item"><span class="field-type">texto curto</span> Prefixo &nbsp;·&nbsp; <span style="color:var(--accent);font-size:11px">param: prefixo</span></div>
+            <div class="field-item"><span class="field-type">texto curto</span> Número da viatura &nbsp;·&nbsp; <span style="color:var(--accent);font-size:11px">param: numero</span></div>
+            <div class="field-item"><span class="field-type">texto curto</span> Setor / equipe &nbsp;·&nbsp; <span style="color:var(--accent);font-size:11px">param: setor</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="forms-card">
+        <div class="forms-card-header">
+          <h3>Seção 2 · Identificação do policial</h3>
+          <span class="pill pill-car">manual</span>
+        </div>
+        <div class="forms-card-body">
+          <div class="field-list">
+            <div class="field-item"><span class="field-type">texto curto</span> Nome completo do policial</div>
+            <div class="field-item"><span class="field-type">texto curto</span> RE / Matrícula</div>
+            <div class="field-item"><span class="field-type">data</span> Data da vistoria</div>
+            <div class="field-item"><span class="field-type">hora</span> Horário de entrega</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="forms-card">
+        <div class="forms-card-header">
+          <h3>Seção 3 · Documentação</h3>
+        </div>
+        <div class="forms-card-body">
+          <div class="field-list">
+            <div class="field-item"><span class="field-type">grade</span> CRLV em dia &nbsp;·&nbsp; Sim / Não / Pendente</div>
+            <div class="field-item"><span class="field-type">grade</span> Licença de uso da viatura &nbsp;·&nbsp; Sim / Não / Pendente</div>
+            <div class="field-item"><span class="field-type">parágrafo</span> Observações sobre documentação</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="forms-card">
+        <div class="forms-card-header">
+          <h3>Seção 4 · Inspeção mecânica e visual</h3>
+        </div>
+        <div class="forms-card-body">
+          <div class="field-list">
+            <div class="field-item"><span class="field-type">grade</span> Lanternas dianteiras e traseiras &nbsp;·&nbsp; OK / Com defeito</div>
+            <div class="field-item"><span class="field-type">grade</span> Faróis alto e baixo &nbsp;·&nbsp; OK / Com defeito</div>
+            <div class="field-item"><span class="field-type">grade</span> Pneus (incluindo estepe) &nbsp;·&nbsp; OK / Desgastado / Furado</div>
+            <div class="field-item"><span class="field-type">grade</span> Lataria (amassados / danos) &nbsp;·&nbsp; OK / Com dano</div>
+            <div class="field-item"><span class="field-type">grade</span> Vidros e retrovisores &nbsp;·&nbsp; OK / Com dano</div>
+            <div class="field-item"><span class="field-type">texto curto</span> Quilometragem atual (km)</div>
+            <div class="field-item"><span class="field-type">grade</span> Nível de combustível &nbsp;·&nbsp; Cheio / 3/4 / 1/2 / 1/4 / Reserva</div>
+            <div class="field-item"><span class="field-type">parágrafo</span> Observações mecânicas</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="forms-card">
+        <div class="forms-card-header">
+          <h3>Seção 5 · Equipamentos e armamento</h3>
+        </div>
+        <div class="forms-card-body">
+          <div class="field-list">
+            <div class="field-item"><span class="field-type">grade</span> Colete balístico &nbsp;·&nbsp; Presente / Ausente / Danificado</div>
+            <div class="field-item"><span class="field-type">grade</span> Algemas &nbsp;·&nbsp; Presente / Ausente</div>
+            <div class="field-item"><span class="field-type">grade</span> Equipamento de primeiros socorros &nbsp;·&nbsp; Presente / Ausente</div>
+            <div class="field-item"><span class="field-type">grade</span> Armamento (conferir número de série) &nbsp;·&nbsp; Conferido / Pendência</div>
+            <div class="field-item"><span class="field-type">texto curto</span> Número de série da arma (se aplicável)</div>
+            <div class="field-item"><span class="field-type">parágrafo</span> Observações sobre equipamentos</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="forms-card">
+        <div class="forms-card-header">
+          <h3>Seção 6 · Registro fotográfico</h3>
+          <span class="pill pill-moto">obrigatório</span>
+        </div>
+        <div class="forms-card-body">
+          <div class="field-list">
+            <div class="field-item"><span class="field-type">arquivo</span> Foto frontal da viatura</div>
+            <div class="field-item"><span class="field-type">arquivo</span> Foto traseira da viatura</div>
+            <div class="field-item"><span class="field-type">arquivo</span> Foto lateral esquerda</div>
+            <div class="field-item"><span class="field-type">arquivo</span> Foto lateral direita</div>
+            <div class="field-item"><span class="field-type">arquivo</span> Foto do painel (km + combustível)</div>
+            <div class="field-item"><span class="field-type">arquivo</span> Foto de danos ou ocorrências (se houver)</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="forms-card">
+        <div class="forms-card-header">
+          <h3>Seção 7 · Assinatura e confirmação</h3>
+        </div>
+        <div class="forms-card-body">
+          <div class="field-list">
+            <div class="field-item"><span class="field-type">parágrafo</span> Observações gerais finais</div>
+            <div class="field-item"><span class="field-type">caixa</span> Declaro que as informações acima são verdadeiras e de minha responsabilidade</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+let viaturas = [];
+let formsUrl = '';
+
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  const tabs = ['cadastro','qrcodes','forms'];
+  document.querySelectorAll('.tab')[tabs.indexOf(name)].classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+function buildURL(v) {
+  const base = (document.getElementById('f-forms-url').value || formsUrl || 'https://forms.gle/SEU-LINK-AQUI').trim();
+  return `${base}?usp=pp_url&entry.modelo=${encodeURIComponent(v.modelo)}&entry.placa=${encodeURIComponent(v.placa)}&entry.prefixo=${encodeURIComponent(v.prefixo)}&entry.numero=${encodeURIComponent(v.numero)}&entry.setor=${encodeURIComponent(v.setor)}`;
+}
+
+function addViatura() {
+  const modelo = document.getElementById('f-modelo').value;
+  const placa = document.getElementById('f-placa').value.trim();
+  const prefixo = document.getElementById('f-prefixo').value.trim();
+  const numero = document.getElementById('f-numero').value.trim();
+  const setor = document.getElementById('f-setor').value.trim();
+  formsUrl = document.getElementById('f-forms-url').value.trim();
+
+  if (!placa || !prefixo) { alert('Informe ao menos a Placa e o Prefixo.'); return; }
+
+  viaturas.push({ modelo, placa, prefixo, numero, setor });
+  renderTable();
+  document.getElementById('f-placa').value = '';
+  document.getElementById('f-prefixo').value = '';
+  document.getElementById('f-numero').value = '';
+  document.getElementById('f-setor').value = '';
+}
+
+function removeViatura(i) {
+  viaturas.splice(i, 1);
+  renderTable();
+}
+
+function renderTable() {
+  const tbody = document.getElementById('viatura-list');
+  document.getElementById('vcount').textContent = viaturas.length;
+  document.getElementById('qcount').textContent = viaturas.length;
+  if (!viaturas.length) {
+    tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><p>Nenhuma viatura cadastrada ainda.</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = viaturas.map((v,i) => {
+    const url = buildURL(v);
+    const isMoto = v.modelo.includes('BMW');
+    return `<tr>
+      <td style="color:var(--muted)">${String(i+1).padStart(2,'0')}</td>
+      <td><span class="pill ${isMoto ? 'pill-moto' : 'pill-car'}">${v.modelo}</span></td>
+      <td><strong>${v.placa}</strong></td>
+      <td style="color:var(--accent)">${v.prefixo}</td>
+      <td style="color:var(--muted)">${v.numero||'—'}</td>
+      <td style="color:var(--muted)">${v.setor||'—'}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;color:var(--muted)" title="${url}">${url}</td>
+      <td><button class="btn btn-danger" onclick="removeViatura(${i})">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function addExemplos() {
+  const exemplos = [
+    { modelo:'Corolla', placa:'BLU-7020', prefixo:'R-05000', numero:'001', setor:'PATROL' },
+    { modelo:'Commander', placa:'ABC-1234', prefixo:'R-05001', numero:'002', setor:'ROCAM' },
+    { modelo:'Corolla Cross', placa:'DEF-5678', prefixo:'R-05002', numero:'003', setor:'RADAR' },
+    { modelo:'Trailblazer', placa:'GHI-9012', prefixo:'R-05003', numero:'004', setor:'PATROL' },
+    { modelo:'Virtus', placa:'JKL-3456', prefixo:'R-05004', numero:'005', setor:'ROCAM' },
+    { modelo:'BMW F800GS', placa:'MNO-7890', prefixo:'R-05005', numero:'006', setor:'MOTO' },
+    { modelo:'HB20', placa:'PQR-1234', prefixo:'R-05006', numero:'007', setor:'RADAR' },
+    { modelo:'Commander', placa:'STU-5678', prefixo:'R-05007', numero:'008', setor:'PATROL' },
+  ];
+  viaturas = [...viaturas, ...exemplos];
+  renderTable();
+}
+
+function gerarQRs() {
+  const grid = document.getElementById('qr-grid');
+  const printSheet = document.getElementById('print-sheet');
+  if (!viaturas.length) {
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><p>Cadastre as viaturas primeiro na aba 1.</p></div>';
+    return;
+  }
+  grid.innerHTML = '';
+  printSheet.innerHTML = '';
+
+  viaturas.forEach((v, i) => {
+    const url = buildURL(v);
+
+    // Screen card
+    const card = document.createElement('div');
+    card.className = 'qr-card';
+    const qrDiv = document.createElement('div');
+    qrDiv.className = 'qr-canvas';
+    qrDiv.id = `qr-${i}`;
+    card.innerHTML = `<div class="qr-label"><strong>${v.modelo}</strong>${v.placa} · ${v.prefixo}${v.setor ? '<br>' + v.setor : ''}</div>`;
+    card.insertBefore(qrDiv, card.firstChild);
+
+    const dlBtn = document.createElement('button');
+    dlBtn.className = 'btn btn-secondary btn-sm';
+    dlBtn.textContent = 'Baixar PNG';
+    dlBtn.onclick = () => downloadQR(i, v);
+    card.appendChild(dlBtn);
+    grid.appendChild(card);
+
+    new QRCode(document.getElementById(`qr-${i}`), {
+      text: url,
+      width: 150,
+      height: 150,
+      colorDark: '#0d1117',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+
+    // Print card
+    const pcard = document.createElement('div');
+    pcard.className = 'print-card';
+    const pqr = document.createElement('div');
+    pqr.className = 'qr-canvas';
+    pqr.id = `pqr-${i}`;
+    pcard.appendChild(pqr);
+    const plabel = document.createElement('p');
+    plabel.innerHTML = `<strong>${v.modelo}</strong><br>${v.placa} · ${v.prefixo}${v.setor ? '<br>' + v.setor : ''}`;
+    pcard.appendChild(plabel);
+    printSheet.appendChild(pcard);
+
+    new QRCode(document.getElementById(`pqr-${i}`), {
+      text: url,
+      width: 100,
+      height: 100,
+      colorDark: '#000000',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  });
+
+  document.getElementById('qcount').textContent = viaturas.length;
+}
+
+function downloadQR(i, v) {
+  setTimeout(() => {
+    const canvas = document.querySelector(`#qr-${i} canvas`);
+    if (!canvas) return;
+    const link = document.createElement('a');
+    link.download = `QR_${v.placa}_${v.prefixo}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  }, 100);
+}
+</script>
+</body>
+</html>
